@@ -9,9 +9,6 @@ export const categories = {
         get_types: state => {
             return state.types;
         },
-        get_all: state => {
-            return state.all;
-        },
         get_necessary: state => {
             return state.necessary;
         }
@@ -29,7 +26,7 @@ export const categories = {
 
     },
     actions: {
-        init_categories: ({commit}) => {
+        initCategories: ({commit}) => {
             axios
                 .get('api/v1/categories')
                 .then(response => {
@@ -40,7 +37,7 @@ export const categories = {
 
                 })
         },
-        init_necessary: (context, type) => {
+        initNecessary: (context, type) => {
             let result = context.state.all.filter(category => {
                 return category.type === type;
             })

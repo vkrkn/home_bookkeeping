@@ -7,7 +7,7 @@
         </div>
         <main>
             <div class="month">
-                <h2>Статистика за месяц</h2>
+                <h2>Статистика за 30 дней</h2>
                 <p>Операций: {{ Number(statistics.month.quantity).toLocaleString() }}</p>
                 <p>На сумму: {{ Number(statistics.month.total).toLocaleString() }}</p>
                 <p>Расход: {{ Number(statistics.month.debit).toLocaleString() }}</p>
@@ -16,7 +16,7 @@
                                      :debit="Number(statistics.month.debit)"></statistic-component>
             </div>
             <div class="weeks">
-                <h2>Статистика за неделю</h2>
+                <h2>Статистика за 7 дней</h2>
                 <p>Операций: {{ Number(statistics.week.quantity).toLocaleString() }}</p>
                 <p>На сумму: {{ Number(statistics.week.total).toLocaleString() }}</p>
                 <p>Расход: {{ Number(statistics.week.debit).toLocaleString() }}</p>

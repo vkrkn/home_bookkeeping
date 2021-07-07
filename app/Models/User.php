@@ -45,12 +45,6 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-
-    public function balance(): HasOne
-    {
-        return $this->hasOne(Balance::class);
-    }
-
     public function categories(): HasMany
     {
         return $this->hasMany(Category::class);
@@ -61,7 +55,6 @@ class User extends Authenticatable
             'id' => $this->id,
             'email' => $this->email,
             'name' => $this->name,
-            'balance' => $this->balance->total,
             'api_token' => $this->api_token,
         ];
     }

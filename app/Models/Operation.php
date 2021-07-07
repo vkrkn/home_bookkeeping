@@ -10,9 +10,11 @@ class Operation extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['category_id', 'sum', 'user_id', 'date', 'comment', 'balance_snapshot'];
+    protected $fillable = ['category_id', 'sum', 'user_id', 'date', 'comment'];
     protected $hidden = ['category_id'];
     protected $appends = ['category'];
+
+    const AMOUNT_MULTIPLE = 100;
 
 
     public function category(): BelongsTo

@@ -1,3 +1,5 @@
+import moment from "moment";
+
 export const operations = {
     namespaced: true,
 
@@ -6,50 +8,53 @@ export const operations = {
     },
     getters: {
         getOperationsData: state => {
-            return state.all.data;
-        },
-        getOperationsCount: state => {
-            if (state.all.hasOwnProperty('data') && Array.isArray(state.all.data)) {
-                return state.all.data.length;
+            if (Array.isArray(state.all)) {
+                return state.all.reverse();
             } else {
-                return 0;
+                return [];
             }
         },
-        getCurrentPage: state => {
-            return state.all.current_page;
-        },
-        getLastPage: state => {
-            return state.all.last_page;
-        },
+        getOperationsCount: state => {
+            if (Array.isArray(state.all)) {
+                return state.all.length;
+            }
+            return 0;
+        }
     },
     mutations: {
-        setOperationsPaginate: (state, operations_paginate) => {
-            state.all = operations_paginate;
+        setOperations: (state, operations) => {
+            state.all = operations;
         }
     },
     actions: {
-        getOperations: (context, page = 1) => {
+        getOperations: (context) => {
             axios
-                .get(`api/v1/operations?page=${page}`)
+                .get(`api/v1/operations`)
                 .then(response => {
-                    context.commit('setOperationsPaginate', response.data)
+                    context.commit('setOperations', response.data)
                 })
                 .catch(error => {
                     console.log(error)
                 })
         },
-        NextOperations: ({dispatch, state}) => {
-            dispatch('getOperations', Number(state.all.current_page) + 1);
+        getOperationsByData: (context, dateObj) => {
+            if (!dateObj.toDate) {
+                dateObj.toDate = moment(new Date()).format('YYYY-MM-DD')
+            }
+            axios
+                .get(`api/v1/operations?fromDate=${dateObj.fromDate}&toDate=${dateObj.toDate}`)
+                .then(response => {
+                    context.commit('setOperations', response.data)
+                })
+                .catch(error => {
+                    console.log(error)
+                })
         },
-        PreviousOperations: ({dispatch, state}) => {
-            dispatch('getOperations', Number(state.all.current_page) - 1);
-        },
-
         delOperation: (context, operation_id) => {
             axios
                 .delete(`api/v1/operations/${operation_id}`)
                 .then(response => {
-                    context.dispatch('getOperations', context.state.all.current_page);
+                    context.dispatch('getOperations');
                 })
                 .catch(error => {
                     console.log(error)

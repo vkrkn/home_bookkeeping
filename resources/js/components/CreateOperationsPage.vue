@@ -1,12 +1,12 @@
 <template>
     <div id="create_operation">
         <div class="row head">
-            <h1>Создать операцию</h1>
+            <h1>{{pagesTitle}}</h1>
             <a href='#' @click="$router.go(-1)">
                 <font-awesome-icon :icon="['fas', 'times']" size="3x"/>
             </a>
         </div>
-        <form @submit.prevent="createOperation">
+        <form @submit.prevent="availableMethod">
             <div class="form-group">
                 <label for="type">Тип</label>
                 <select id="type" v-model.lazy="operation.type" @change="setCategoryByType" class="form-control" required>
@@ -38,7 +38,7 @@
 
             <div class="form-group">
                 <label for="sum">Сумма</label>
-                <input v-model.number="operation.sum" id="sum" class="form-control" type="number" required>
+                <input v-model.number="operation.sum" id="sum" class="form-control" type="number" step="0.01" required>
             </div>
 
             <div class="form-group">
@@ -46,7 +46,7 @@
                 <textarea v-model="operation.comment" name="comment" id="comment" rows="3" class="form-control"></textarea>
             </div>
             <br>
-            <button type="submit" class="btn btn-warning btn-lg btn-block">Создать</button>
+            <button type="submit" class="btn btn-warning btn-lg btn-block">{{buttonName}}</button>
         </form>
     </div>
 </template>
@@ -61,6 +61,8 @@ export default {
     components: {DatePicker},
     data() {
         return {
+            pagesTitle: '',
+            buttonName: '',
             datePickerDate: new Date(),
             operation: {
                 type: '',
@@ -71,7 +73,26 @@ export default {
             },
         }
     },
-
+    mounted() {
+        if (this.$route.name === 'operation.create') {
+            this.pagesTitle = 'Создать операцию';
+            this.buttonName = 'Создать';
+        } else if (this.$route.name === 'operation.update') {
+            this.pagesTitle = 'Изменить операцию';
+            this.buttonName = 'Изменить';
+            function checkOperation(id) {
+                return function (operation) {
+                    return operation.id === id;
+                }
+            }
+            let operation = this.$store.state.operations.all.find(checkOperation(this.$route.params.id));
+            this.operation = operation;
+            this.operation.type = operation.category.type;
+            this.setCategoryByType();
+            this.operation.category_id = operation.category.id;
+            this.datePickerDate = new Date(operation.date);
+        }
+    },
     computed: {
         getTypes() {
             return this.$store.getters["categories/get_types"];
@@ -88,17 +109,35 @@ export default {
             this.$router.go(-1)
         },
         setCategoryByType: function () {
-            this.$store.dispatch('categories/init_necessary', this.operation.type)
+            this.$store.dispatch('categories/initNecessary', this.operation.type)
         },
         createOperation: function () {
             axios
-            .post('api/v1/operations', this.operation)
+            .post('../api/v1/operations', this.operation)
             .then(response => {
                 this.$router.go(-1)
             })
             .catch(error => {
                 console.log(error)
             })
+        },
+        updateOperation: function (id) {
+            axios
+                .patch(`../../api/v1/operations/${id}`, this.operation)
+                .then(response => {
+                    this.$router.go(-1)
+                })
+                .catch(error => {
+                    console.log(error)
+                })
+        },
+        availableMethod: function () {
+            if (this.$route.name === 'operation.update') {
+                this.updateOperation(this.$route.params.id);
+            } else {
+                this.createOperation();
+            }
+
         }
     },
     watch: {

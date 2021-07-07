@@ -21,15 +21,43 @@ class OperationController extends Controller
 
     /**
      * Display a listing of the resource.
-     *
+     * @param Request $request
      * @return JsonResponse
      */
-    public function index()
+    public function index(Request $request)
     {
-        return Operation::where('user_id', Auth::id())
-            ->orderBy('date', 'desc')
-            ->orderBy('created_at', 'desc')
-            ->paginate(10);
+        $this->validate($request, [
+            'fromDate' => 'nullable|date',
+            'toDate' => 'nullable|date',
+        ]);
+
+        $operation = Operation::where('user_id', Auth::id());
+        if ($request->has('fromDate')) {
+            $operation->where('date', '>=', $request->input('fromDate'));
+
+            if ($request->has('toDate')) {
+                $operation->where('date', '<=', $request->input('toDate'));
+            }
+        } else {
+            $operation->where('date', '>=', Carbon::now()->subDays(30)->toDateString());
+        }
+
+        $balance = 0;
+        return $operation
+            ->orderBy('date', 'asc')
+            ->orderBy('created_at', 'asc')
+            ->get()
+            ->transform(function ($item) use (&$balance) {
+                $item->sum = $item->sum / Operation::AMOUNT_MULTIPLE;
+                if ($item->category->type === Category::DEBIT) {
+                    $balance -= $item->sum;
+                } else {
+                    $balance += $item->sum;
+                }
+                $item->balance = $balance;
+
+                return $item;
+            });
     }
 
     /**
@@ -42,24 +70,14 @@ class OperationController extends Controller
     {
         $this->validate($request, [
             'category_id' => 'required|integer|min:1',
-            'sum' => 'required|integer|min:1',
+            'sum' => 'required|numeric|min:1',
             'date' => 'required|date',
             'comment' => 'nullable|string',
         ]);
 
-        $balance = User::find(Auth::id())->balance;
-
-        if ($request->input('type') === Category::DEBIT) {
-            $balance->total -= $request->input('sum');
-        } else if ($request->input('type') === Category::CREDIT) {
-            $balance->total += $request->input('sum');
-        }
-        $balance->save();
-
         Operation::create([
             'category_id' => $request->input('category_id'),
-            'sum' => $request->input('sum'),
-            'balance_snapshot' => $balance->total,
+            'sum' => $request->input('sum') * 100,
             'user_id' => Auth::id(),
             'date' => $request->input('date'),
             'comment' => $request->input('comment'),
@@ -89,7 +107,12 @@ class OperationController extends Controller
     public function update(Request $request, $id)
     {
         $operation = Operation::where('user_id', Auth::id())->findOrFail($id);
-        $operation->update($request->only(['category_id', 'sum', 'user_id']));
+        $operation->update([
+            'category_id' => $request->input('category_id'),
+            'sum' => $request->input('sum') * 100,
+            'date' => $request->input('date'),
+            'comment' => $request->input('comment'),
+        ]);
         return response()->json(['success' => true], 200);
     }
 
@@ -143,15 +166,15 @@ class OperationController extends Controller
         return response()->json([
             'month' => [
                 'quantity' => $operations_month->count(),
-                'total' => $debitMonth + $creditMonth,
-                'debit' => $debitMonth,
-                'credit' => $creditMonth,
+                'total' => ($debitMonth + $creditMonth) / Operation::AMOUNT_MULTIPLE,
+                'debit' => $debitMonth / Operation::AMOUNT_MULTIPLE,
+                'credit' => $creditMonth / Operation::AMOUNT_MULTIPLE,
             ],
             'week' => [
                 'quantity' => $operations_week->count(),
-                'total' => $debitWeek + $creditWeek,
-                'debit' => $debitWeek,
-                'credit' => $creditWeek,
+                'total' => ($debitWeek + $creditWeek) / Operation::AMOUNT_MULTIPLE,
+                'debit' => $debitWeek / Operation::AMOUNT_MULTIPLE,
+                'credit' => $creditWeek / Operation::AMOUNT_MULTIPLE,
             ],
         ]);
     }

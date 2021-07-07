@@ -1,12 +1,18 @@
 <template>
     <div id="home-page">
         <div class="buttons">
-            <div class="paginate">
-                <a href="#" v-if="getCurrentPage !== 1" @click="getPrevOperations">&laquo; предыдущая</a>
-                <span>{{getCurrentPage}} из {{getLastPage}}</span>
-                <a href="#" v-if="getCurrentPage !== getLastPage" @click="getNextOperations"> следующая &raquo;</a>
-
+            <div class="select-operations-by-data">
+                <form @submit.prevent="getOperationsByData(dateObj)">
+                    <span>от</span>
+                    <input type="date" v-model="dateObj.fromDate" required>
+                    &nbsp;
+                    <span>до</span>
+                    <input type="date" v-model="dateObj.toDate">
+                    &nbsp;
+                    <button class="btn btn-warning">Показать</button>
+                </form>
             </div>
+
             <div>
                 <router-link tag="button" :to="{name: 'statistics'}" class="btn btn-outline-warning">Статистика</router-link>
                 <router-link tag="button" :to="{name: 'operation.create'}" class="btn btn-warning">Добавить</router-link>
@@ -31,10 +37,14 @@
                 <td>{{operation.category.name}}</td>
                 <td>{{operation.date}}</td>
                 <td>{{Number(operation.sum).toLocaleString()}}</td>
-                <td>{{Number(operation.balance_snapshot).toLocaleString()}}</td>
+                <td>{{Number(operation.balance).toLocaleString()}}</td>
                 <td>{{operation.comment}}</td>
                 <td>
-                <a href='#' @click="delOperation(operation.id)" style="color: red">
+                <router-link :to="{name: 'operation.update', params: {id: operation.id}}" title="Изменить">
+                    <font-awesome-icon :icon="['fas', 'pen']" size="1x"/>
+                </router-link>
+                    &nbsp;
+                <a href='#' @click="delOperation(operation.id)" style="color: red" title="Удалить">
                     <font-awesome-icon :icon="['fas', 'times']" size="1x"/>
                 </a>
                 </td>
@@ -51,26 +61,28 @@ export default {
     name: "HomePage",
     data() {
         return {
+            dateObj: {
+                fromDate: '',
+                toDate: ''
+            }
         }
     },
     computed: {
         ...mapGetters({
             operations: 'operations/getOperationsData',
-            getCurrentPage: 'operations/getCurrentPage',
-            getLastPage: 'operations/getLastPage',
             getOperationsCount: 'operations/getOperationsCount'
         })
     },
     created() {
-        this.$store.dispatch('categories/init_categories')
-        this.$store.dispatch('operations/getOperations')
+        console.log();
+        this.$store.dispatch('categories/initCategories');
+        this.$store.dispatch('operations/getOperations');
     },
     methods: {
         ...mapActions({
-            getNextOperations: 'operations/NextOperations',
-            getPrevOperations: 'operations/PreviousOperations',
-            delOperation: 'operations/delOperation'
-        })
+            delOperation: 'operations/delOperation',
+            getOperationsByData: 'operations/getOperationsByData'
+        }),
     }
 }
 </script>
