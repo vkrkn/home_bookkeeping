@@ -31,7 +31,6 @@ class AuthController extends Controller
         $user->api_token = Str::random(60);
         $user->save();
 
-        $user->balance()->create(['total' => 0]);
         $user->categories()->createMany(Category::DEFAULT_CATEGORY);
 
         return response()->json([
